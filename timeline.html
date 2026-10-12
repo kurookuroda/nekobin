@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_card.html" import card %}
+{% block content %}
+  {% if f.active or groups %}
+  <form class="filters" method="get" action="/" role="search">
+    <div class="filter-row">
+      <input class="filter-q" type="search" name="q" value="{{ f.q }}" placeholder="プロンプト・応答・メモから探す(空白区切りで、すべて含むもの)" aria-label="検索語">
+      <button type="submit" class="filter-submit">🔍 検索</button>
+    </div>
+    <div class="filter-row">
+      <label>評価
+        <select name="rating">
+          <option value=""{% if not f.rating %} selected{% endif %}>すべて</option>
+          <option value="good"{% if f.rating == 'good' %} selected{% endif %}>😺 良い</option>
+          <option value="bad"{% if f.rating == 'bad' %} selected{% endif %}>😿 悪い</option>
+          <option value="none"{% if f.rating == 'none' %} selected{% endif %}>未評価のみ</option>
+        </select>
+      </label>
+      <label>強さ
+        <select name="level">
+          <option value=""{% if not f.level %} selected{% endif %}>指定なし</option>
+          {% for n in (2, 3, 4, 5) %}<option value="{{ n }}"{% if f.level == n %} selected{% endif %}>{{ n }}以上</option>{% endfor %}
+        </select>
+      </label>
+      <label>モデル
+        <select name="model">
+          <option value=""{% if not f.model %} selected{% endif %}>すべて</option>
+          {% for m in models %}<option value="{{ m }}"{% if f.model == m %} selected{% endif %}>{{ m }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>期間
+        <input type="date" name="since" value="{{ f.since }}" aria-label="開始日"> 〜 <input type="date" name="until" value="{{ f.until }}" aria-label="終了日">
+      </label>
+      {% if f.active %}<a class="filter-clear" href="/">条件をクリア</a>{% endif %}
+    </div>
+    {% for n in f.notices %}<p class="filter-notice">{{ n }}</p>{% endfor %}
+  </form>
+  {% if f.active %}
+    <p class="result-count"><strong>{{ total }}</strong>件{% if total and older_url %}(新しい順に表示){% endif %}</p>
+  {% endif %}
+  {% endif %}
+
+  {% if not groups and f.active %}
+    <div class="empty">
+      <p class="empty-title">条件に合う記録がありません</p>
+      <p><a href="/">条件をクリアする</a></p>
+    </div>
+  {% endif %}
+  {% if not groups and not f.active %}
+    <div class="empty">
+      <p class="empty-title">まだ記録がありません 🐾</p>
+      <p>ターミナルから送ってみましょう:</p>
+      <pre>curl -X POST {{ request.base_url }}hook \
+  -H "Authorization: Bearer $NEKOBIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"test","prompt":"こんにちは","response":"はい!"}'</pre>
+    </div>
+  {% endif %}
+  {% for label, cards in groups %}
+    <h2 class="day">{{ label }}</h2>
+    {% for c in cards %}{{ card(c, show_session=true) }}{% endfor %}
+  {% endfor %}
+  {% if older_url %}<p class="older"><a href="{{ older_url }}">もっと古い記録 →</a></p>{% endif %}
+{% endblock %}

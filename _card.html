@@ -1,0 +1,79 @@
+{% macro card(c, show_session=false) %}
+<article class="card {{ c.rating_class }}" id="turn-{{ c.id }}">
+  <header class="card-head">
+    <div class="meta">
+      <a class="seq" href="/t/{{ c.id }}" title="このターンの固定リンク">#{{ c.seq }}</a>
+      <time title="{{ c.time_full }}">{{ c.time_short }}</time>
+      <span class="model">{{ c.model }}</span>
+      {% if show_session %}<a class="session-link" href="/s/{{ c.session_id|urlencode }}#turn-{{ c.id }}">{{ c.session_title }}</a>{% endif %}
+      {% for tag in c.tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+    </div>
+    <div class="head-actions">
+      <button type="button" class="copy" data-copy-url="/t/{{ c.id }}.md?template=review" title="別のAIにレビューさせるための依頼文をコピー">🔍 レビュー依頼</button>
+      <details class="copymenu">
+        <summary class="copy">📋 全体 ▾</summary>
+        <div class="menu-panel">
+          <button type="button" data-copy-url="/t/{{ c.id }}.md">ターン全体(markdown)</button>
+          <button type="button" data-copy-url="/t/{{ c.id }}.md?notes=1">ターン全体(評価・メモ付き)</button>
+          <hr>
+          <button type="button" data-copy-url="/t/{{ c.id }}.md?template=review&amp;notes=1">レビュー依頼(評価・メモ付き)</button>
+        </div>
+      </details>
+      {% if c.rating %}<span class="rating" title="{{ c.rating_title }}">{{ c.rating_view }}</span>{% endif %}
+    </div>
+  </header>
+
+  <section class="block prompt">
+    <div class="label-row">
+      <h3 class="label">👤 プロンプト</h3>
+      <button type="button" class="copy" data-copy-url="/t/{{ c.id }}/prompt.txt">コピー</button>
+    </div>
+    <div class="body prompt-text" data-clamp="prompt">{{ c.prompt_html }}</div>
+  </section>
+
+  <section class="block response">
+    <div class="label-row">
+      <h3 class="label">🤖 応答</h3>
+      <button type="button" class="copy" data-copy-url="/t/{{ c.id }}/response.md">コピー</button>
+    </div>
+    <div class="body md" data-clamp="response">{{ c.response_html }}</div>
+  </section>
+
+  <section class="block notes"{% if not c.notes %} hidden{% endif %}>
+    <h3 class="label">📝 メモ</h3>
+    <div class="note-list">
+      {% for n in c.notes %}
+        <div class="note {{ n.author }}" data-note-id="{{ n.id }}">
+          <div class="note-meta">
+            <span class="note-who">{{ '🤖' if n.author == 'bot' else '🧑' }} {{ n.author }} · {{ n.time_full }}</span>
+            <span class="note-actions">
+              <button type="button" class="note-edit">編集</button>
+              <button type="button" class="note-del">削除</button>
+            </span>
+          </div>
+          <div class="note-body">{{ n.body_html }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <footer class="card-foot">
+    <div class="meter" data-turn="{{ c.id }}" data-rating="{{ c.rating or '' }}" role="group" aria-label="評価">
+      <span class="meter-label">評価</span>
+      <span class="meter-side bad">
+        {%- for n in (5, 4, 3, 2, 1) -%}
+          <button type="button" class="cat bad{% if c.rating and c.rating < 0 and -c.rating >= n %} on{% endif %}" data-value="{{ -n }}" aria-label="悪さ {{ n }}" title="悪さ {{ n }}/5">😿</button>
+        {%- endfor -%}
+      </span>
+      <span class="meter-sep" aria-hidden="true"></span>
+      <span class="meter-side good">
+        {%- for n in (1, 2, 3, 4, 5) -%}
+          <button type="button" class="cat good{% if c.rating and c.rating > 0 and c.rating >= n %} on{% endif %}" data-value="{{ n }}" aria-label="良さ {{ n }}" title="良さ {{ n }}/5">😺</button>
+        {%- endfor -%}
+      </span>
+      <span class="meter-text">{{ c.rating_short }}</span>
+    </div>
+    <button type="button" class="note-add">📝 メモを追加</button>
+  </footer>
+</article>
+{% endmacro %}
